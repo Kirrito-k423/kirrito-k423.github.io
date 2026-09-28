@@ -1,0 +1,77 @@
+[
+  {
+    "id": "moe",
+    "name": "MoE Dispatch & Combine",
+    "subtitle": "看见 token 如何穿过专家网络",
+    "category": "技术实验",
+    "label": "INTERACTIVE EXPLAINER",
+    "path": "hexo-icarus-static/moe-dispatch-combine/",
+    "repo": "hexo-icarus-static",
+    "description": "从路由、分发到专家计算与结果合并，沿着 token 的路径理解 MoE。切换 EP 规模与 Top-k，观察跨 rank 通信和负载分布。",
+    "tags": [
+      "MoE",
+      "通信可视化",
+      "教学模拟"
+    ]
+  },
+  {
+    "id": "benchmark",
+    "name": "Micro Benchmark Lab",
+    "subtitle": "把测量结果变成可探索的证据",
+    "category": "技术实验",
+    "label": "PERFORMANCE LAB",
+    "path": "micro-benchmark-lab-web/",
+    "repo": "micro-benchmark-lab-web",
+    "description": "交互浏览 Ascend A3 / A5 的 DataCopy 实机测量。按搬运方向、工作集与批量筛选曲线，查看原始 tick、样本和实验条件。",
+    "tags": [
+      "Ascend",
+      "DataCopy",
+      "实机测量"
+    ]
+  },
+  {
+    "id": "health",
+    "name": "Is China Health",
+    "subtitle": "从公开数据理解生活的变化",
+    "category": "数据观察",
+    "label": "DATA OBSERVATORY",
+    "path": "IsChinaHealth/",
+    "repo": "IsChinaHealth",
+    "description": "围绕人口、收入、就业与生活成本，对照中国、美国、日本及全球指标。结合原始来源、统计口径与可信度阅读数据。",
+    "tags": [
+      "民生数据",
+      "跨国比较",
+      "来源追溯"
+    ]
+  },
+  {
+    "id": "matchmaking",
+    "name": "Modern Matchmaking",
+    "subtitle": "探索有边界的渐进式自我表达",
+    "category": "产品原型",
+    "label": "PRODUCT PROTOTYPE",
+    "path": "ModernMatchmakingSystem-site/",
+    "repo": "ModernMatchmakingSystem-site",
+    "description": "围绕日常生活、共同生活、分歧边界与人生方向，探索分阶段披露的阅读体验。公开页为使用虚构非敏感内容的非生产原型。",
+    "tags": [
+      "渐进式披露",
+      "交互原型",
+      "虚构内容"
+    ]
+  },
+  {
+    "id": "resume",
+    "name": "Resume Online",
+    "subtitle": "工作、研究与工程实践的一个切面",
+    "category": "关于我",
+    "label": "PERSONAL PROFILE",
+    "path": "ResumeOnline/zh/",
+    "repo": "ResumeOnline",
+    "description": "在线浏览 AI 系统、昇腾训练推理与高性能计算相关经历、代表项目和论文；支持中英文切换与 PDF 下载。",
+    "tags": [
+      "AI Systems",
+      "HPC",
+      "个人简历"
+    ]
+  }
+]
