@@ -60,6 +60,21 @@
     ]
   },
   {
+    "id": "dialogue",
+    "name": "对话练习册",
+    "subtitle": "按集查问题，沿时间线看回应",
+    "category": "学习教程",
+    "label": "DIALOGUE WORKBOOK",
+    "path": "dating-dialogue-tutorial/",
+    "repo": "dating-dialogue-tutorial",
+    "description": "按集和时间线梳理约会视频中的问答与博主讲解，支持分类筛选、搜索和原视频时间跳转。机器转写与字幕核对状态分别标注，逐句音频听校尚未完成。",
+    "tags": [
+      "对话梳理",
+      "时间线溯源",
+      "分类索引"
+    ]
+  },
+  {
     "id": "resume",
     "name": "Resume Online",
     "subtitle": "工作、研究与工程实践的一个切面",
