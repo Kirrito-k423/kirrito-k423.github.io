@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#214f47">
+  <meta name="description" content="杭州湖滨雨天约会一图流：可选桌游、拼豆或轻松逛店，联动时间线、双人预算、步行估算与高德地图。">
+  <title>湖滨雨天约会 · 一起慢慢逛</title>
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./style.css">
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#planner">跳到行程规划</a>
+  <header class="masthead wrap">
+    <a class="brand" href="./" aria-label="湖滨雨天约会首页"><span class="brand-symbol">☂</span><span>一起慢慢逛<small>HUBIN, HANGZHOU</small></span></a>
+    <div class="header-actions"><a href="../">Web Lab ↗</a><button id="share-btn" class="text-button">分享方案 ↗</button><button id="print-btn" class="small-button">打印 / PDF</button></div>
+  </header>
+  <main class="wrap" id="planner" tabindex="-1">
+    <section class="hero" aria-labelledby="page-title">
+      <div><p class="eyebrow">A LITTLE RAIN. A LOVELY AFTERNOON.</p><h1 id="page-title">把雨声，留在窗外<span>。</span></h1><p class="hero-copy">西湖边的第一次见面。逛两家有趣的小店，再一起做点什么。</p></div>
+      <div class="hero-note"><span class="rain-icon" aria-hidden="true">☂</span><div><strong>湖滨 · 雨天约会计划</strong><span>龙翔桥出发 / 两个人 / 室内优先</span><small>规划资料：2026.11.05 · 预算与步行为估算</small></div></div>
+    </section>
+
+    <section class="planning-controls" aria-label="选择约会流程">
+      <div class="section-line"><h2><span class="section-number">01</span>挑一种舒服的节奏</h2><span class="muted">切换后，路线与预算会一起更新</span></div>
+      <div class="plan-options" role="group" aria-label="约会流程">
+        <button class="plan-option active" data-plan="board" aria-pressed="true"><span class="option-icon" aria-hidden="true">⚄</span><span><strong>少淋雨 · 轻桌游</strong><small>in77 + 工联CC，推荐初次见面</small></span><span class="option-check" aria-hidden="true">✓</span></button>
+        <button class="plan-option" data-plan="craft" aria-pressed="false"><span class="option-icon pixel-icon" aria-hidden="true">▦</span><span><strong>留个纪念 · 拼豆</strong><small>去湖滨88，带走一个小挂件</small></span><span class="option-check" aria-hidden="true">✓</span></button>
+        <button class="plan-option" data-plan="stroll" aria-pressed="false"><span class="option-icon" aria-hidden="true">✳</span><span><strong>轻松一点 · 只逛逛</strong><small>先聊聊天，暂不安排付费活动</small></span><span class="option-check" aria-hidden="true">✓</span></button>
+      </div>
+      <div class="preferences">
+        <label class="time-control">见面时间 <input id="start-time" type="time" value="15:00" min="10:00" max="19:00" required></label>
+        <span class="pref-divider"></span>
+        <label class="check-label"><input id="include-kpop" type="checkbox" checked><span>逛 K-pop 店</span></label>
+        <label class="check-label"><input id="include-dinner" type="checkbox" checked><span>一起吃晚饭</span></label>
+        <label class="check-label" id="sony-option" hidden><input id="include-sony" type="checkbox"><span>顺路逛 Sony</span></label>
+        <button id="reset-btn" class="text-button reset-button">恢复推荐</button>
+      </div>
+    </section>
+
+    <section class="metrics" aria-label="行程总览" aria-live="polite" aria-atomic="true">
+      <div><span>两个人的预算</span><strong id="budget-total">¥320–500</strong><small>含饮品、所选活动与晚饭</small></div>
+      <div><span>慢慢玩，大概</span><strong id="duration-total">约3小时40分</strong><small id="time-range">15:00 — 18:40</small></div>
+      <div><span>转场步行 · 估算</span><strong id="walk-total">0.9–1.7 km</strong><small>另加店内随逛，已含返回地铁</small></div>
+      <div class="outdoor-metric"><span>室外步行 · 估算</span><strong id="outdoor-total">以室内为主</strong><small id="outdoor-note">地下通道正常开放时</small></div>
+    </section>
+
+    <section class="route-overview" aria-label="一图流行程顺序">
+      <div class="section-line"><h2><span class="section-number">02</span>这一下午，顺着走就好</h2><span class="route-key"><i></i> 室内 / 地下 <i class="outdoor"></i> 需撑伞</span></div>
+      <div id="route-ribbon" class="route-ribbon"></div>
+      <div class="route-advice"><span aria-hidden="true">↳</span><p id="route-advice"></p></div>
+    </section>
+
+    <div class="explore-grid">
+      <section class="itinerary-section" aria-labelledby="itinerary-title">
+        <div class="section-line"><h2 id="itinerary-title"><span class="section-number">03</span>时间与小安排</h2><button id="copy-btn" class="text-button">复制行程 ↗</button></div>
+        <p class="section-caption">点选一站，查看楼层提示、地图与导航。</p>
+        <ol id="itinerary" class="itinerary"></ol>
+      </section>
+      <aside class="map-section" aria-label="地图与当前站点详情">
+        <div class="map-heading"><div><span class="eyebrow">LET'S MEET HERE</span><h2 id="map-title">龙翔桥 · 地下碰头</h2><p id="map-address"></p></div><span class="map-tag"><i></i> 高德地图</span></div>
+        <div class="map-mode" role="group" aria-label="地图显示方式"><button data-map-mode="overview" aria-pressed="true" class="active">商圈总览</button><button data-map-mode="search" aria-pressed="false">检索当前店铺</button><span>官方高德地图 · 可拖动缩放</span></div>
+        <div class="map-shell"><iframe id="amap-frame" title="高德地图：湖滨商圈总览" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe><div class="map-wait" id="map-wait"><span class="loading-dot"></span>正在载入高德地图…</div></div>
+        <div class="map-actions"><a id="amap-link" class="primary-button" target="_blank" rel="noopener noreferrer">高德查店 ↗</a><a id="baidu-link" class="outline-button" target="_blank" rel="noopener noreferrer">百度查店 ↗</a><a id="walk-link" class="outline-button" target="_blank" rel="noopener noreferrer">上一站 → 本站</a></div>
+        <p class="map-help">地图加载慢时可直接打开导航。步行规划可能走地面，商场内优先看地下通道指示。</p>
+        <div class="selected-tip"><span class="tip-label">这一站的小建议</span><p id="selected-tip"></p><div id="selected-caution"></div></div>
+        <div class="budget-card"><div class="section-line"><h3>双人预算怎么分</h3><span class="muted">预留金额</span></div><div id="budget-bars"></div><p>不含交通、停车和购物；活动收费、团购及周末使用条件，以预约时门店答复为准。</p></div>
+      </aside>
+    </div>
+
+    <section class="before-you-go" aria-labelledby="before-title"><div class="section-line"><h2 id="before-title"><span class="section-number">04</span>出门前，留好这三个余地</h2><span class="eyebrow">LESS RUSH, MORE ROOM</span></div><div class="tips-grid"><div><span>01 / 座位</span><h3>只预约一个主活动</h3><p>说明是两个人、第一次来，确认教学、最低消费和周末券。拼豆选小图，留出熨烫时间。</p></div><div><span>02 / 下雨</span><h3>走地下，留一把伞</h3><p>in77、工联CC优先走地下连通口。湖滨88按需要过街安排；现场临时封闭时，跟着导览绕行。</p></div><div><span>03 / 节奏</span><h3>聊得开心，就多待一会</h3><p>前两站各逛二十来分钟就好。不感兴趣直接跳过，晚饭可随时取消，行程不用全部打卡。</p></div></div></section>
+
+    <details class="sources"><summary>其他备选与资料依据 <span>＋</span></summary><div class="source-content"><div><h3>这次不塞进主线的备选</h3><p>书店距离稍远；密室先确认是否支持两人；按小时玩的PS5 / Switch店尚需确认现址。</p><ul id="alternative-list"></ul></div><div><h3>资料与估算说明</h3><p>页面是行程规划，不显示实时天气、实时门店营业或实时价格。距离按街区与楼层转场估算；时间包含预计转场，未计排队。地图按店名检索，楼层与铺位需看商场导览。</p><ul><li><a href="https://m.winshang.com/news712947.html" target="_blank" rel="noopener noreferrer">in77 地下商业连通资料</a></li><li><a href="https://travel.hangzhou.com.cn/content/2022-07/29/content_8318027_2.htm" target="_blank" rel="noopener noreferrer">一直娱 / 三月兽区域参考（较早资料）</a></li><li><a href="https://www.sohu.com/a/905915914_121124835" target="_blank" rel="noopener noreferrer">猎人桌游湖滨店地址介绍</a></li><li><a href="https://hznews.hangzhou.com.cn/jingji/content/2026-09/04/content_9298161.htm" target="_blank" rel="noopener noreferrer">突突队长拼豆门店报道（2026.09）</a></li><li><a href="https://www.thepaper.cn/newsDetail_forward_34300062" target="_blank" rel="noopener noreferrer">湖滨88运营变更（2026.10），预约时确认门店</a></li><li><a href="https://www.playstation.com/zh-hans-cn/local/retailers-list/" target="_blank" rel="noopener noreferrer">Sony 湖滨88店官方地址</a></li></ul></div></div></details>
+    <noscript><div class="no-script">开启 JavaScript 可选择流程并计算预算。推荐路线：龙翔桥 → in77 B区B2一直娱 → C区B1三月兽 → 工联CC 6楼猎人桌游 → 同楼晚饭 → 龙翔桥。双人预留320—500元，转场约0.9—1.7公里，优先走地下通道。<a href="https://uri.amap.com/search?keyword=杭州湖滨银泰in77&city=杭州&view=map">在高德查看商圈 ↗</a></div></noscript>
+  </main>
+  <footer class="wrap footer"><span>☂ 有计划，也有一点随性。</span><span>湖滨雨天约会 · 2026.11</span></footer>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <dialog id="copy-dialog"><form method="dialog"><h2 id="copy-dialog-title">复制这份行程</h2><p>长按或全选下方文字即可复制。</p><textarea id="copy-fallback" readonly aria-labelledby="copy-dialog-title"></textarea><button class="primary-button">完成</button></form></dialog>
+</body>
+</html>
