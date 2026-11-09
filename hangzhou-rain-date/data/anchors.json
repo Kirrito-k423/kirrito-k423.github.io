@@ -1,0 +1,44 @@
+{
+  "station": {
+    "name": "龙翔桥C口",
+    "lat": 30.2564367,
+    "lng": 120.1590868,
+    "osm": "node/5027727108",
+    "kind": "entrance"
+  },
+  "in77b": {
+    "name": "in77 B区",
+    "lat": 30.2571325,
+    "lng": 120.1587659,
+    "osm": "way/513389578",
+    "kind": "building"
+  },
+  "in77c": {
+    "name": "in77 C2区",
+    "lat": 30.2545563,
+    "lng": 120.1600676,
+    "osm": "way/260711006",
+    "kind": "building"
+  },
+  "gonglian": {
+    "name": "工联CC",
+    "lat": 30.2570658,
+    "lng": 120.1599794,
+    "osm": "way/29993237",
+    "kind": "building"
+  },
+  "hubin88": {
+    "name": "湖滨88",
+    "lat": 30.2570853,
+    "lng": 120.157655,
+    "osm": "way/389863636",
+    "kind": "building"
+  },
+  "book": {
+    "name": "悦览树",
+    "lat": 30.2523237,
+    "lng": 120.1635693,
+    "osm": "node/3522188774",
+    "kind": "poi"
+  }
+}

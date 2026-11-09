@@ -1,223 +1,274 @@
-/* Plain, dependency-free planner. All displayed costs and walking distances are planning estimates. */
 (() => {
   'use strict';
-  const $ = (selector) => document.querySelector(selector);
-  const defaults = { plan: 'board', start: '15:00', kpop: true, dinner: true, sony: false };
-  const plans = {
-    board: { name: '少淋雨 · 轻桌游', activity: 'board', dinnerPlace: 'gonglian', advice: 'in77 ↔ 工联CC优先走地下连通口。只预约一小时左右的双人桌游，把余下时间留给聊天。' },
-    craft: { name: '留个纪念 · 拼豆', activity: 'craft', dinnerPlace: 'hubin88', advice: 'C区 → D区先走地下，再撑伞去湖滨88；晚饭留在同楼。选小图，给熨烫留10—15分钟。' },
-    stroll: { name: '轻松一点 · 只逛逛', activity: null, dinnerPlace: 'in77', advice: '这条路线不预订付费活动。感兴趣就多逛一会，想坐下来就先吃饭；跨区优先走地下通道。' }
-  };
-  const places = {
-    station: { title: '龙翔桥 · 地下碰头', short: '龙翔桥', area: '地铁1号线 · 出闸后按商场导览走', query: '杭州 龙翔桥地铁站', duration: 0, cost: [0, 0], category: null, description: '先约好商场内的具体碰头点，发店名和楼层。', tip: '地铁出闸后先找in77商场连通口。不要只约“龙翔桥出口”，这里人多，出口也多。', caution: '连通口及出口开放情况以现场导览为准。', building: 'station' },
-    meet: { title: '买杯饮品，先聊一会', short: '饮品碰头', area: 'in77 B区 · 地下商业区，就近选有座位的店', query: '杭州 湖滨银泰in77 B区', duration: 20, cost: [40, 60], category: '饮品', description: '先坐一小会，等彼此进入聊天的节奏。', tip: '饮品店当天就近选，不用为了某个网红店排队。碰头前把最终店名和楼层发给对方。', caution: '', building: 'in77b' },
-    kpop: { title: '一直娱 POP研究所', short: '一直娱', area: 'in77 B区 B2 · K-pop专辑与周边', query: '杭州 一直娱POP研究所 湖滨银泰in77', duration: 25, cost: [0, 0], category: null, description: '聊喜欢的音乐、演出，或者让对方介绍喜欢的团。', tip: '不追星也可以听对方分享。两个人都没兴趣，就取消“逛K-pop店”，不用为了走完路线硬逛。', caution: '楼层依据公开资料，具体铺位看当日商场导览；购物另计。', building: 'in77b' },
-    anime: { title: '三月兽 · 逛点可爱的小东西', short: '三月兽', area: 'in77 C区 B1 · 动漫周边与手办', query: '杭州 三月兽 湖滨银泰in77', duration: 25, cost: [0, 0], category: null, description: '从喜欢的角色，聊到动画、游戏和小时候。', tip: '一起看看喜欢的角色和小物件就好。逛店不需要一定买东西，也不用急着送礼物。', caution: '具体铺位以商场导览与地图搜索结果为准；购物另计。', building: 'in77c' },
-    board: { title: '猎人桌游 · 玩点简单的', short: '轻桌游', area: '工联CC 6楼 · 延安路292号', query: '杭州 猎人桌游 湖滨店 工联CC', duration: 70, cost: [100, 180], category: '桌游', description: '请店员教一款容易上手的双人游戏，先玩一小时左右。', tip: '预约时说：“两个人、第一次来，想玩规则简单的双人游戏，需要讲解。”先确认座位、最低消费和周末团购条件。', caution: '预算是双人预留金额，非门店实时报价；留意是否按整场收费。', building: 'gonglian' },
-    craft: { title: '突突队长 · 一起拼个小挂件', short: '拼豆手作', area: '湖滨88商场内 · 平海路124号，铺位预约时确认', query: '杭州 突突队长 拼豆 湖滨88', duration: 75, cost: [60, 120], category: '拼豆', description: '各选一个小图，边做边聊，成品带回家。', tip: '选一小时左右能拼完的图案，额外预留熨烫和冷却时间。预约时确认双人套餐、耗材及成品配件是否另收费。', caution: '湖滨88于2026年10月更换运营方，出发前确认门店营业、楼层与座位。', building: 'hubin88' },
-    sony: { title: 'Sony Store · 顺路看看', short: 'Sony', area: '湖滨88 1—2层 · 平海路124号', query: '杭州 Sony Store 湖滨88店', duration: 20, cost: [0, 0], category: null, description: '看看主机、相机或耳机，轻松逛一小段。', tip: '这是零售与产品体验店。现场能否试玩游戏、试用哪些产品，直接问店员即可。', caution: '不是按小时畅玩的PS5 / Switch游戏馆，购物另计。', building: 'hubin88' }
-  };
-  const dinnerPlaces = {
-    gonglian: { area: '工联CC同楼 · 按当日座位选餐厅', query: '杭州 工联CC 餐厅', building: 'gonglian' },
-    hubin88: { area: '湖滨88同楼 · 按当日营业与座位选餐厅', query: '杭州 湖滨88 餐厅', building: 'hubin88' },
-    in77: { area: 'in77 C区同楼 · 按当日座位选餐厅', query: '杭州 湖滨银泰in77 C区 餐厅', building: 'in77c' }
-  };
-  const alternatives = [
-    ['悦览树 / 解放路新华书店', '解放路225—227号；室外步行较多，留作不下雨时的备选。', '杭州 悦览树 解放路新华书店'],
-    ['Xcape 异时刻密室（湖滨店）', '平海路76号5楼；先确认非恐怖主题、两人能否开场或需要拼场。', '杭州 Xcape异时刻密室逃脱 湖滨店'],
-    ['红姆电玩 · PS5 / Switch（湖滨店）', '商家发布过主机体验信息；现址和营业尚需确认，不计入推荐路线。', '杭州 红姆电玩 湖滨店'],
-    ['第一回合（in77店）', '早期资料为D区B1，地下街区有过调改；先查现址再安排。', '杭州 第一回合 湖滨银泰in77店']
-  ];
-  const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
-  function url(base, params) { return `${base}?${new URLSearchParams(params).toString()}`; }
-  function amapSearch(query) { return url('https://uri.amap.com/search', { keyword: query, city: '杭州', view: 'map', src: 'shaojie.hubin-date', callnative: '0' }); }
-  function baiduSearch(query) { return url('https://api.map.baidu.com/place/search', { query, region: '杭州', output: 'html', src: 'webapp.shaojie.hubindate' }); }
-  function baiduWalk(from, to) { return url('https://api.map.baidu.com/direction', { origin: from, destination: to, mode: 'walking', region: '杭州', output: 'html', src: 'webapp.shaojie.hubindate' }); }
-  let mapMode = 'overview';
-  function embedMap(query) {
-    // GCJ-02 search centre only, from Amap's public Longxiangqiao POI. No shop coordinates are fabricated.
-    if (mapMode === 'search') return url('https://www.amap.com/ssr/embed/search', { keyword: query, lng: '120.164052', lat: '30.254642', city: '杭州', zoom: '16', platform: 'pc', src: 'shaojie.hubin-date' });
-    return url('https://www.amap.com/ssr/embed/view', { lng: '120.164052', lat: '30.254642', zoom: '16', platform: 'pc', src: 'shaojie.hubin-date' });
-  }
-  function readSettings() {
-    const params = new URLSearchParams(location.hash.slice(1));
-    const result = { ...defaults };
-    if (Object.hasOwn(plans, params.get('plan'))) result.plan = params.get('plan');
-    if (/^(1[0-8]):[0-5]\d$|^19:00$/.test(params.get('start') || '')) result.start = params.get('start');
-    ['kpop', 'dinner', 'sony'].forEach((key) => { if (params.has(key)) result[key] = params.get(key) !== '0'; });
-    return result;
-  }
-  let settings = readSettings();
-  let selectedId = 'meet';
-  let current = null;
-  let toastTimer;
-  let mapTimer;
-  const kmRange = (range) => `${(Math.floor(range[0] / 100) / 10).toFixed(1)}–${(Math.ceil(range[1] / 100) / 10).toFixed(1)} km`;
-  const money = (range) => range[1] === 0 ? '免费逛' : `¥${range[0]}–${range[1]}`;
-  function clock(minutes) { return `${minutes >= 1440 ? '次日 ' : ''}${String(Math.floor(minutes / 60) % 24).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`; }
-  function durationText(minutes) { const h = Math.floor(minutes / 60), m = minutes % 60; return `${h ? `${h}小时` : ''}${m ? `${m}分` : ''}` || '0分'; }
-  function metersText(range) { return `${range[0]}–${range[1]}米`; }
-  function addRange(a, b) { return [a[0] + b[0], a[1] + b[1]]; }
-  function leg(from, to) {
-    const indoor = (walk, minutes, text) => ({ walk, minutes, outdoor: [0, 0], text });
-    if (!from) return indoor([0, 0], 0, '旅程从这里开始');
-    if (to.id === 'meet') return indoor([150, 250], 5, '沿地铁商场连通口进入B区');
-    if (to.id === 'kpop') return indoor([50, 150], 3, 'B区地下同区内走，找B2导览');
-    if (to.id === 'anime') return indoor(from.id === 'kpop' ? [250, 400] : [200, 350], 8, '沿地下通道去C区，注意切换到B1');
-    if (to.id === 'board') return indoor([200, 350], 8, '地下通道到工联CC，再乘电梯到6楼');
-    if (to.id === 'craft') return { walk: [400, 600], minutes: 12, outdoor: [200, 300], text: '先经地下往D区，再撑伞去湖滨88' };
-    if (to.id === 'sony') return indoor([50, 150], 4, '湖滨88内换层，查看导览');
-    if (to.id === 'dinner') return indoor([100, 200], 4, '同楼选餐厅，电梯或扶梯换层');
-    if (to.id === 'return') {
-      if (from.building === 'hubin88') return { walk: [400, 600], minutes: 12, outdoor: [200, 300], text: '撑伞回in77地下，再进龙翔桥站' };
-      return indoor([150, 300], 6, '沿地下商场连通口返回龙翔桥站');
-    }
-    return indoor([0, 0], 0, '同楼内步行');
-  }
-  function buildPlan() {
-    const plan = plans[settings.plan];
-    const list = ['station', 'meet'];
-    if (settings.kpop) list.push('kpop');
-    list.push('anime');
-    if (plan.activity) list.push(plan.activity);
-    if (settings.plan === 'craft' && settings.sony) list.push('sony');
-    const stops = list.map((id) => ({ ...places[id], id }));
-    if (settings.dinner) stops.push({ id: 'dinner', title: '一起吃晚饭', short: '晚饭', ...dinnerPlaces[plan.dinnerPlace], duration: 60, cost: [180, 260], category: '晚饭', description: '挑一家能正常说话、当天不用久等的餐厅。', tip: '同楼就近选餐厅，先看看排队情况。坐下来接着聊，行程不用卡得太紧。', caution: '这是双人餐饮预算，未指定餐厅或套餐。' });
-    stops.push({ ...places.station, id: 'return', title: '回到龙翔桥 · 轻松返程', short: '地铁返程', area: '地铁1号线 · 按进站导览返回站厅', tip: '一起走回地铁口，道别也自然。雨天不必再为了“下一站”绕远路。', description: '留一点余韵，轻松结束这一下午。' });
-    const [hour, minute] = settings.start.split(':').map(Number);
-    let time = hour * 60 + minute;
-    let cost = [0, 0], walk = [0, 0], outdoor = [0, 0];
-    const categories = [];
-    stops.forEach((stop, index) => {
-      stop.leg = leg(stops[index - 1], stop);
-      time += stop.leg.minutes;
-      stop.arrival = time;
-      time += stop.duration;
-      stop.departure = time;
-      cost = addRange(cost, stop.cost);
-      walk = addRange(walk, stop.leg.walk);
-      outdoor = addRange(outdoor, stop.leg.outdoor);
-      if (stop.category) categories.push({ name: stop.category, range: stop.cost });
-    });
-    return { plan, stops, cost, walk, outdoor, categories, start: hour * 60 + minute, end: time, duration: time - hour * 60 - minute };
-  }
-  function persistSettings() {
-    const params = new URLSearchParams({ plan: settings.plan, start: settings.start, kpop: settings.kpop ? '1' : '0', dinner: settings.dinner ? '1' : '0', sony: settings.sony ? '1' : '0' });
-    history.replaceState(null, '', `${location.pathname}${location.search}#${params}`);
-  }
-  function render() {
-    current = buildPlan();
-    if (!current.stops.some((s) => s.id === selectedId)) selectedId = 'meet';
-    document.querySelectorAll('[data-plan]').forEach((button) => {
-      const active = button.dataset.plan === settings.plan;
-      button.classList.toggle('active', active);
-      button.setAttribute('aria-pressed', String(active));
-    });
-    $('#start-time').value = settings.start;
-    $('#include-kpop').checked = settings.kpop;
-    $('#include-dinner').checked = settings.dinner;
-    $('#include-sony').checked = settings.sony;
-    $('#sony-option').hidden = settings.plan !== 'craft';
-    $('#budget-total').textContent = money(current.cost);
-    $('#duration-total').textContent = `约${durationText(current.duration)}`;
-    $('#time-range').textContent = `${settings.start} — ${clock(current.end)} · 含转场，不含排队`;
-    $('#walk-total').textContent = kmRange(current.walk);
-    $('#outdoor-total').textContent = current.outdoor[1] ? `${metersText(current.outdoor)}` : '以室内为主';
-    $('#outdoor-note').textContent = current.outdoor[1] ? '已含去程与返回地铁的室外段' : '地下连通口正常开放时';
-    const costLabels = ['饮品', plans[settings.plan].activity ? (settings.plan === 'craft' ? '拼豆' : '桌游') : null, settings.dinner ? '晚饭' : null].filter(Boolean);
-    $('#budget-total').nextElementSibling.textContent = `含${costLabels.join('、')} · 购物另计`;
-    $('#route-advice').textContent = current.plan.advice + (current.end > 22 * 60 ? ' 预计结束较晚，建议提前见面或取消晚饭，并确认门店营业时段。' : '');
-    $('#route-ribbon').innerHTML = current.stops.map((stop, index) => `<button class="ribbon-stop ${stop.id === selectedId ? 'selected' : ''} ${current.stops[index + 1]?.leg.outdoor[1] ? 'outdoor' : ''}" data-stop="${stop.id}" aria-label="查看第${index + 1}站：${escapeHtml(stop.title)}" aria-pressed="${stop.id === selectedId}"><span class="node">${String(index + 1).padStart(2, '0')}</span><strong>${escapeHtml(stop.short)}</strong><small>${clock(stop.arrival)}${stop.duration ? ` · ${stop.duration}分钟` : ''}</small></button>`).join('');
-    $('#itinerary').innerHTML = current.stops.map((stop, index) => {
-      const next = current.stops[index + 1];
-      return `<li><div class="time-col">${clock(stop.arrival)}</div><div><article class="stop-card ${stop.id === selectedId ? 'selected' : ''}" data-card="${stop.id}"><div class="stop-top"><button class="stop-select" data-stop="${stop.id}" aria-pressed="${stop.id === selectedId}"><span class="stop-number">${String(index + 1).padStart(2, '0')}</span><h3>${escapeHtml(stop.title)}</h3></button><span class="cost">${stop.category ? money(stop.cost) : stop.duration ? '免费逛' : '—'}</span></div><p class="location">${escapeHtml(stop.area)}</p><p class="description">${escapeHtml(stop.description)}</p><div class="stop-bottom"><span class="duration-chip">${stop.duration ? `${stop.duration}分钟 · ${clock(stop.arrival)}—${clock(stop.departure)}` : index ? '这次约会，到这里刚刚好' : '地铁出闸后开始计时'}</span><a href="${escapeHtml(amapSearch(stop.query))}" target="_blank" rel="noopener noreferrer">高德查店 ↗</a></div></article>${next ? `<div class="walk-segment ${next.leg.outdoor[1] ? 'outdoor' : ''}"><strong>${next.leg.outdoor[1] ? '☂ 需撑伞' : '↳ 室内 / 地下'} · ${metersText(next.leg.walk)} · 约${next.leg.minutes}分钟</strong><br>${escapeHtml(next.leg.text)}</div>` : ''}</div></li>`;
-    }).join('');
-    const maxCost = Math.max(...current.categories.map((c) => c.range[1]), 1);
-    $('#budget-bars').innerHTML = current.categories.map((item) => `<div class="budget-row"><span>${item.name}</span><div class="budget-track"><span style="width:${Math.round(item.range[1] / maxCost * 100)}%"></span></div><strong>${money(item.range)}</strong></div>`).join('');
-    persistSettings();
-    selectStop(selectedId);
-  }
-  function selectStop(id, scroll = false) {
-    const index = current.stops.findIndex((s) => s.id === id);
-    if (index < 0) return;
-    selectedId = id;
-    const stop = current.stops[index];
-    document.querySelectorAll('[data-stop]').forEach((button) => {
-      const active = button.dataset.stop === id;
-      button.classList.toggle('selected', active);
-      button.setAttribute('aria-pressed', String(active));
-    });
-    document.querySelectorAll('[data-card]').forEach((card) => card.classList.toggle('selected', card.dataset.card === id));
-    $('#map-title').textContent = stop.title;
-    $('#map-address').textContent = stop.area;
-    $('#selected-tip').textContent = stop.tip;
-    $('#selected-caution').innerHTML = stop.caution ? `<p class="caution">${escapeHtml(stop.caution)}</p>` : '';
-    $('#amap-link').href = amapSearch(stop.query);
-    $('#baidu-link').href = baiduSearch(stop.query);
-    const previous = current.stops[index - 1];
-    $('#walk-link').hidden = !previous;
-    if (previous) {
-      $('#walk-link').href = baiduWalk(previous.query, stop.query);
-      $('#walk-link').textContent = '百度步行 ↗';
-      $('#walk-link').setAttribute('aria-label', `百度步行：${previous.short}到${stop.short}`);
-    }
-    const nextUrl = embedMap(stop.query);
-    if ($('#amap-frame').getAttribute('src') !== nextUrl) {
-      $('#map-wait').classList.remove('done');
-      $('#map-wait').innerHTML = '<span class="loading-dot"></span>正在载入高德地图…';
-      $('#amap-frame').src = nextUrl;
-      $('#amap-frame').title = mapMode === 'search' ? `高德地图检索：${stop.title}` : '高德地图：湖滨商圈总览';
-      clearTimeout(mapTimer);
-      mapTimer = setTimeout(() => {
-        $('#map-wait').innerHTML = '地图加载较慢，可点下方“高德查店”打开。';
-      }, 15000);
-    }
-    if (scroll) {
-      const target = matchMedia('(max-width: 760px)').matches ? $('.map-section') : $(`[data-card="${id}"]`);
-      target.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'nearest' });
-    }
-  }
+  const C = window.HubinCore;
+  const $ = (s) => document.querySelector(s);
+  const esc = (s) => String(s).replace(/[&<>"']/g, (ch) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+  const link = (base, params) => `${base}?${new URLSearchParams(params)}`;
+  const amap = (q) => link('https://uri.amap.com/search', { keyword:q, city:'杭州', view:'map', callnative:'0', src:'shaojie.hubin-date' });
+  const baidu = (q) => link('https://api.map.baidu.com/place/search', { query:q, region:'杭州', output:'html', src:'webapp.shaojie.hubindate' });
+  const baiduWalk = (a,b) => link('https://api.map.baidu.com/direction', { origin:a, destination:b, mode:'walking', region:'杭州', output:'html', src:'webapp.shaojie.hubindate' });
+  let state = C.parseState(location.hash);
+  let anchors, routeData, contextData, map, trip;
+  let category = 'all', focusedPlace = null, selectedLeg = null, currentPanel = null;
+  let markerLayer, routeLayer, contextLayer, labelLayer, tileLayer;
+  let lineStyles = [], preview = null, frame = null, walker = null, toastTimer;
+  const selectedColor = '#226b58';
+  const loadJSON = async (name) => { const r = await fetch(`./data/${name}`); if (!r.ok) throw new Error(`${name}: HTTP ${r.status}`); return r.json(); };
+  const isSmall = () => innerWidth <= 680;
+  const at = (anchorId) => [anchors[anchorId].lat, anchors[anchorId].lng];
+  const venueQuery = (visit) => C.venues[visit.id]?.query || (visit.anchor === 'station' ? '杭州 龙翔桥地铁站 C口' : `杭州 ${anchors[visit.anchor].name}`);
+
   function toast(text) {
-    clearTimeout(toastTimer);
-    $('#toast').textContent = text;
-    $('#toast').classList.add('visible');
+    clearTimeout(toastTimer); $('#toast').textContent = text; $('#toast').classList.add('visible');
     toastTimer = setTimeout(() => $('#toast').classList.remove('visible'), 2800);
   }
-  async function copy(text, message) {
-    try {
-      if (!navigator.clipboard?.writeText) throw new Error('Clipboard unavailable');
-      await navigator.clipboard.writeText(text);
-      toast(message);
-    } catch {
-      $('#copy-fallback').value = text;
-      $('#copy-dialog').showModal();
-      $('#copy-fallback').focus();
-      $('#copy-fallback').select();
+  function closePanel() {
+    $('#detail-panel').hidden = true; document.body.classList.remove('panel-open');
+    focusedPlace = null; selectedLeg = null; currentPanel = null;
+    if (map) { drawMarkers(); highlightLeg(null); }
+  }
+  function openPanel(label, content, type) {
+    $('#panel-eyebrow').textContent = label; $('#panel-content').innerHTML = content;
+    $('#detail-panel').hidden = false; document.body.classList.add('panel-open'); currentPanel = type;
+    $('#panel-content').scrollTop = 0; $('#map-instruction').hidden = true;
+  }
+  function locateFocused(anchorId) {
+    if (!map) return;
+    // Place the selected building clear of the drawer, using a viewport pixel offset.
+    const targetPoint = map.latLngToContainerPoint(at(anchorId));
+    const targetX = isSmall() ? innerWidth * .5 : innerWidth * .53;
+    const targetY = isSmall() ? innerHeight * .33 : innerHeight * .42;
+    map.panBy([targetPoint.x - targetX, targetPoint.y - targetY], { animate:!matchMedia('(prefers-reduced-motion: reduce)').matches, duration:.25 });
+  }
+  function openPlace(id, pan = true) {
+    selectedLeg = null; focusedPlace = id;
+    if (id === 'station') {
+      openPanel('起点 / 返程点', `<span class="panel-tag">地铁1号线 · C口</span><h2>龙翔桥C口</h2><p class="panel-address">从这里出发，轻松逛一圈。</p><p>默认回到同一出口。C口坐标来自OSM的地铁出入口，商场地下连通口请以现场导览为准。</p><div class="button-row"><a class="secondary-button" href="${esc(amap('杭州 龙翔桥 C口'))}" target="_blank" rel="noopener noreferrer">高德查看 ↗</a><a class="secondary-button" href="${esc(baidu('杭州 龙翔桥 C口'))}" target="_blank" rel="noopener noreferrer">百度查看 ↗</a></div><div class="coordinates-note">地铁出入口点位：OpenStreetMap node/5027727108。这里不是实时定位，不会读取你的位置。</div>`, { type:'place', id });
+      drawMarkers(); highlightLeg(null); if (pan) locateFocused('station'); return;
+    }
+    const v = C.venues[id]; if (!v) return;
+    const chosen = state.ids.includes(id);
+    const visit = trip.visits.find((p) => p.id === id);
+    openPanel(`${v.type} / ${anchors[v.anchor].name}`, `<div class="venue-category"><span class="category-symbol">${v.icon}</span><span>${v.type} · ${chosen ? `已选第${state.ids.indexOf(id)+1}站` : '备选店铺'}</span></div><h2>${esc(v.name)}</h2><p class="panel-address">${esc(v.floor)}</p><p>${esc(v.address)}</p><div class="panel-stats"><div><strong>${v.duration}分钟</strong><span>${visit ? `${C.clock(visit.arrival)}—${C.clock(visit.departure)}` : '建议停留'}</span></div><div><strong>${C.money(v.cost)}</strong><span>双人预留 · 购物另计</span></div></div><button class="${chosen ? 'danger-button' : 'primary-button'}" data-toggle-place="${id}">${chosen ? '− 移出这次行程' : '＋ 加入行程，接在最后一站'}</button><div class="button-row"><a class="secondary-button" href="${esc(amap(v.query))}" target="_blank" rel="noopener noreferrer">高德查店 ↗</a><a class="secondary-button" href="${esc(baidu(v.query))}" target="_blank" rel="noopener noreferrer">百度查店 ↗</a></div><h3>这一站怎么安排</h3><p>${esc(v.tip)}</p><p class="rain-note">☂ ${esc(v.rain)}</p><div class="coordinates-note">${esc(v.locationNote)}</div>${v.source ? `<a class="inline-link" href="${esc(v.source)}" target="_blank" rel="noopener noreferrer">查看店铺资料 ↗</a>` : ''}`, { type:'place', id });
+    drawMarkers(); highlightLeg(null); if (pan) locateFocused(v.anchor);
+  }
+  function stepText(step, index) {
+    const road = step.name || '步行通道';
+    const modifier = step.maneuver?.modifier || '';
+    if (step.maneuver?.type === 'depart') return `从${road}附近出发`;
+    if (step.maneuver?.type === 'arrive') return '到达目的地附近道路，入店看商场导览';
+    const turns = { left:'左转', right:'右转', 'slight left':'向左前方', 'slight right':'向右前方', 'sharp left':'向左后方', 'sharp right':'向右后方', uturn:'掉头', straight:'继续直行' };
+    return `${index === 0 ? '沿' : (turns[modifier] ? `${turns[modifier]}，沿` : '沿')}${road}行走`;
+  }
+  function openLeg(id, pan = true) {
+    const leg = trip.legs.find((r) => r.id === Number(id)); if (!leg) return;
+    focusedPlace = null; selectedLeg = leg.id;
+    const footRoute = leg.route;
+    const same = leg.sameBuilding;
+    const names = footRoute ? [...new Set(footRoute.steps.map((s) => s.name).filter(Boolean))].join(' → ') : '';
+    const fromQuery = venueQuery(leg.from), toQuery = venueQuery(leg.to);
+    const extraSnap = footRoute ? Math.round(footRoute.waypoints.reduce((sum, p) => sum + p.distance, 0)) : 0;
+    const rain = same ? '同一商场内的楼层与铺位变换，不绘制虚构的楼内路径。' : leg.from.anchor === 'book' || leg.to.anchor === 'book' ? '书店这段室外转场较长，雨大时可从行程中取消。' : leg.from.anchor === 'hubin88' || leg.to.anchor === 'hubin88' ? '湖滨88转场按需要撑伞安排，地图不保证全程有顶棚。' : 'in77与工联CC之间可优先找地下商业连通口；当前曲线是公开步行路网方案，不能据此认定全程避雨。';
+    openPanel(`路线段 ${leg.id+1} / ${same ? '楼内换层' : '真实步行道路'}`, `<span class="panel-tag">${same ? '同一商场 · 无道路曲线' : 'OSRM foot · OSM步行路网'}</span><h2>${esc(leg.from.name)}<br><span style="color:var(--muted);font-weight:400">↓</span><br>${esc(leg.to.name)}</h2><div class="panel-stats"><div><strong>${same ? '同楼' : footRoute ? C.distance(leg.distance) : '待核实'}</strong><span>${same ? '地图不绘楼内路径' : '道路段距离，不含入店接驳'}</span></div><div><strong>${leg.minutes}分钟</strong><span>${C.clock(leg.start)}—${C.clock(leg.end)} · 含预计进出店</span></div></div>${footRoute ? `<button class="primary-button" data-play-leg="${leg.id}">▶ 只播放这一段走法</button>` : ''}<div class="button-row"><a class="secondary-button" href="${esc(baiduWalk(fromQuery,toQuery))}" target="_blank" rel="noopener noreferrer">百度步行导航 ↗</a><a class="secondary-button" href="${esc(amap(toQuery))}" target="_blank" rel="noopener noreferrer">高德看终点 ↗</a></div><p class="rain-note">☂ ${rain}</p>${footRoute ? `<h3>沿途道路</h3><p>${esc(names || '开放步行通道')}</p><div>${footRoute.steps.map((s,i) => `<div class="road-step"><span>${String(i+1).padStart(2,'0')}</span><div>${esc(stepText(s,i))}${s.distance > 0 ? `<small>${Math.round(s.distance)}米</small>` : ''}</div></div>`).join('')}</div><div class="coordinates-note">曲线由步行路线服务返回，共${footRoute.geometry.coordinates.length}个道路坐标点。建筑代表点已吸附到可步行路网，起终点入店接驳合计约${extraSnap}米，未算入上方道路距离。数据快照：2026.11.09，不是实时通行保证。</div>` : '<p>店内位置与上下楼路线请看商场导览，不能用建筑代表点推断店内路径。</p>'}`, {type:'leg',id:leg.id});
+    drawMarkers(); highlightLeg(leg.id);
+    if (pan && footRoute) fitGeometry(footRoute.geometry.coordinates, true);
+  }
+  function openJourney() {
+    const sequence = trip.visits.map((visit,i) => {
+      const venue = C.venues[visit.id];
+      const index = state.ids.indexOf(visit.id);
+      const meal = trip.dinner && visit.id === state.ids[state.ids.length-1] ? `<li class="journey-row"><span class="row-number">☕</span><button class="journey-title" data-open-settings><strong>晚饭预留 · 餐厅待选</strong><small>${C.clock(trip.dinner.arrival)} · 60分钟，不添加虚构地图点</small></button></li>` : '';
+      return `<li class="journey-row"><span class="row-number">${String(i).padStart(2,'0')}</span><button class="journey-title" ${venue ? `data-open-place="${visit.id}"` : visit.anchor === 'station' ? 'data-open-place="station"' : 'data-open-settings'}><strong>${esc(visit.name)}</strong><small>${C.clock(visit.arrival)}${visit.duration ? ` · 停留${visit.duration}分钟` : ''}</small></button>${venue ? `<div class="order-buttons"><button data-order="up" data-id="${visit.id}" aria-label="上移${esc(visit.name)}" ${index===0?'disabled':''}>↑</button><button data-order="down" data-id="${visit.id}" aria-label="下移${esc(visit.name)}" ${index===state.ids.length-1?'disabled':''}>↓</button><button data-remove="${visit.id}" aria-label="移除${esc(visit.name)}">×</button></div>` : ''}</li>${meal}${trip.legs[i] ? `<li><button class="route-mini" data-open-leg="${trip.legs[i].id}">${trip.legs[i].sameBuilding ? '↳ 楼内换层' : `↳ ${C.distance(trip.legs[i].distance)}道路步行`} · 约${trip.legs[i].minutes}分钟　查看 →</button></li>` : ''}`;
+    }).join('');
+    openPanel('行程顺序 / 可调整', `<h2>这次，怎么逛</h2><p>在地图上点选店铺加入，按加入顺序连路。上下移动站点，路线会重新绘制。</p><ul class="journey-list">${sequence}</ul><button id="copy-itinerary" class="primary-button">复制这份文字行程</button><div class="button-row"><button id="clear-places" class="secondary-button">清空，自己选点</button><button data-open-settings class="secondary-button">时间 / 晚饭</button></div>`, {type:'journey'});
+    focusedPlace = null; selectedLeg = null; drawMarkers(); highlightLeg(null);
+  }
+  function openSettings() {
+    openPanel('行程设置 / 自动更新', `<h2>留一点弹性</h2><label class="setting-row">见面时间<input id="start-time" type="time" value="${state.start}" min="10:00" max="19:00" required></label><label class="setting-row">预留一顿晚饭<input id="include-dinner" type="checkbox" ${state.dinner?'checked':''}></label><label class="setting-row">最后回到龙翔桥C口<input id="include-loop" type="checkbox" ${state.loop?'checked':''}></label><p class="muted-note">晚饭预留双人¥180—260、60分钟。餐厅尚未选定，暂放末站附近，实际餐厅转场未计；店铺内换层另留时间。</p><h3>双人预算</h3>${[...trip.visits,...(trip.dinner?[trip.dinner]:[])].filter((v) => v.cost[1] > 0).map((v) => `<div class="cost-item"><span>${esc(v.name)}</span><strong>${C.money(v.cost)}</strong></div>`).join('')}<div class="panel-divider"></div><div class="cost-item"><strong>合计预留</strong><strong>${C.money(trip.cost)}</strong></div><p class="muted-note">费用为预留金额，不是实时报价；不含购物、交通和停车。活动先确认双人预约、教学、最低消费与周末团购条件。</p>${trip.end>22*60?'<p class="rain-note">预计结束晚于22:00，建议提前见面、减少站点，并确认门店营业时段。</p>':''}`, {type:'settings'});
+  }
+  function openHelp() {
+    openPanel('地图说明 / 来源', `<span class="panel-tag">MAP FIRST · 2026.11.09</span><h2>点在地图上，<br>路也在地图上。</h2><h3>怎么用</h3><p>① 点店铺标记，加入或移出行程。<br>② 点一条路线，展开距离、道路与逐步走法。<br>③ 点“播放走法”，看圆点沿实际道路坐标移动。<br>④ “行程”里可上下调整顺序，分享链接会保留选择。</p><h3>点位与道路</h3><p>底图来自OpenStreetMap的真实道路、建筑与湖岸。商场内店铺共用建筑代表点，楼层在详情里标注；不假装拥有店内精确坐标。</p><p>有色实线是FOSSGIS/OSRM步行服务返回的道路曲线。短灰虚线仅表示建筑代表点到路网吸附点的接驳，不是已核实的楼内走法。相同商场内换层不画假路线。</p><p class="rain-note">步行路网不等于避雨路线。地下通道与入店路线以现场导览为准，商场开放和门店营业请出发前确认。</p><h3>地图与数据</h3><ul class="source-list"><li><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors · ODbL</a>：建筑/道路/湖岸，2026.11.09快照。</li><li><a href="https://routing.openstreetmap.de/about.html" target="_blank" rel="noopener noreferrer">FOSSGIS / OSRM foot</a>：30组定向步行路线快照。</li><li><a href="https://m.winshang.com/news712947.html" target="_blank" rel="noopener noreferrer">in77地下连通资料</a>；具体通道现场确认。</li><li><a href="https://www.thepaper.cn/newsDetail_forward_34300062" target="_blank" rel="noopener noreferrer">湖滨88近期运营变更</a>；先确认手工门店营业。</li></ul><p class="muted-note">默认“简洁路网”直接加载本页数据。右侧▧可切换标准在线街道底图；网络不通时仍可看本地路网与已缓存道路路线。不获取实时定位，不含追踪脚本。</p>`, {type:'help'});
+  }
+  function update(panelRefresh = true) {
+    stopPreview(); trip = C.buildTrip(state,anchors,routeData.routes);
+    history.replaceState(null,'',`${location.pathname}${location.search}#${C.serializeState(state)}`);
+    $('#plan-title').textContent = trip.name;
+    $('#stop-count').textContent = state.ids.length;
+    $('#walk-total').textContent = C.distance(trip.distance);
+    $('#duration-total').textContent = C.duration(trip.duration);
+    $('#time-range').textContent = `${state.start}—${C.clock(trip.end)}`;
+    $('#budget-total').textContent = C.money(trip.cost);
+    $('#play-button').disabled = !trip.legs.some((leg) => leg.route);
+    $('#map-status').textContent = trip.unknown ? `${trip.unknown}段尚无道路数据` : '步行路网快照 · 商场内换层另计';
+    document.querySelectorAll('[data-preset]').forEach((b) => { const active=b.dataset.preset===state.plan; b.classList.toggle('active',active); b.setAttribute('aria-pressed',String(active)); });
+    drawRoutes(); drawMarkers();
+    if (panelRefresh && currentPanel) {
+      const panel = {...currentPanel};
+      if (panel.type==='place') openPlace(panel.id,false);
+      if (panel.type==='leg') { if(trip.legs.some((l)=>l.id===panel.id))openLeg(panel.id,false);else closePanel(); }
+      if (panel.type==='journey') openJourney();
+      if (panel.type==='settings') openSettings();
     }
   }
-  function itineraryText() {
-    return [`湖滨雨天约会｜${current.plan.name}`, `见面 ${settings.start}，预计 ${clock(current.end)} 结束（含预计转场，不含排队）`, `双人预算 ${money(current.cost)}，转场步行约 ${(current.walk[0] / 1000).toFixed(1)}—${(current.walk[1] / 1000).toFixed(1)}公里`, `室外：${current.outdoor[1] ? `约${metersText(current.outdoor)}` : '以室内为主，需地下连通口正常开放'}`, '', ...current.stops.map((stop, i) => `${i + 1}. ${clock(stop.arrival)} ${stop.title}${stop.duration ? `｜${stop.duration}分钟` : ''}\n   ${stop.area}${stop.leg.minutes ? `\n   转场约${metersText(stop.leg.walk)} / ${stop.leg.minutes}分钟` : ''}`), '', '距离和预算均为规划估算；活动提前约位，楼层及通道以现场导览为准。', location.href].join('\n');
+  function togglePlace(id) {
+    if (!C.venues[id]) return;
+    if (state.ids.includes(id)) state.ids = state.ids.filter((v) => v!==id);
+    else state.ids.push(id);
+    state.plan='custom'; update(false); openPlace(id,false);
   }
-  $('.skip-link').addEventListener('click', (event) => { event.preventDefault(); $('#planner').focus(); $('#planner').scrollIntoView(); });
-  document.querySelectorAll('[data-plan]').forEach((button) => button.addEventListener('click', () => { settings.plan = button.dataset.plan; selectedId = plans[settings.plan].activity || 'anime'; render(); }));
-  [['#include-kpop', 'kpop'], ['#include-dinner', 'dinner'], ['#include-sony', 'sony']].forEach(([selector, key]) => $(selector).addEventListener('change', (event) => { settings[key] = event.target.checked; render(); }));
-  $('#start-time').addEventListener('change', (event) => {
-    if (!event.target.validity.valid || !/^(1[0-8]):[0-5]\d$|^19:00$/.test(event.target.value)) { event.target.value = settings.start; toast('建议选择10:00—19:00之间的见面时间'); return; }
-    settings.start = event.target.value; render();
-  });
-  $('#route-ribbon').addEventListener('click', (event) => { const button = event.target.closest('[data-stop]'); if (button) selectStop(button.dataset.stop, true); });
-  $('#itinerary').addEventListener('click', (event) => { if (event.target.closest('a')) return; const target = event.target.closest('[data-stop]') || event.target.closest('[data-card]'); if (target) selectStop(target.dataset.stop || target.dataset.card, true); });
-  $('#reset-btn').addEventListener('click', () => { settings = { ...defaults }; selectedId = 'meet'; render(); toast('已恢复推荐路线'); });
-  $('#share-btn').addEventListener('click', () => copy(location.href, '方案链接已复制，打开后保留你的选择'));
-  $('#copy-btn').addEventListener('click', () => copy(itineraryText(), '完整行程已复制'));
-  $('#print-btn').addEventListener('click', () => window.print());
-  document.querySelectorAll('[data-map-mode]').forEach((button) => button.addEventListener('click', () => {
-    mapMode = button.dataset.mapMode;
-    document.querySelectorAll('[data-map-mode]').forEach((item) => { item.classList.toggle('active', item === button); item.setAttribute('aria-pressed', String(item === button)); });
-    selectStop(selectedId);
-  }));
-  $('#amap-frame').addEventListener('load', () => { clearTimeout(mapTimer); $('#map-wait').classList.add('done'); });
-  window.addEventListener('hashchange', () => { settings = readSettings(); render(); });
-  $('#alternative-list').innerHTML = alternatives.map(([name, note, query]) => `<li><a href="${escapeHtml(amapSearch(query))}" target="_blank" rel="noopener noreferrer">${escapeHtml(name)} ↗</a><br>${escapeHtml(note)}</li>`).join('');
-  render();
+  function centerOf(feature) {
+    let coords=feature.geometry.coordinates;
+    if(feature.geometry.type==='Polygon')coords=coords[0];
+    if(feature.geometry.type==='MultiPolygon')coords=coords[0][0];
+    if(!coords?.length||typeof coords[0]?.[0]!=='number')return null;
+    return [coords.reduce((a,p)=>a+p[1],0)/coords.length,coords.reduce((a,p)=>a+p[0],0)/coords.length];
+  }
+  function initContext() {
+    const selectedBuildings = new Set(Object.values(anchors).map((a)=>a.osm));
+    contextLayer = L.geoJSON(contextData, { pane:'context', interactive:false, style(feature) {
+      const p=feature.properties;
+      if(p.natural==='water')return {color:'#a6c7bf',weight:1,fillColor:'#d0e6dd',fillOpacity:1};
+      if(p.leisure==='park')return {color:'#d9e3c9',weight:1,fillColor:'#e0e8d4',fillOpacity:1};
+      if(p.building)return {color:selectedBuildings.has(p.osm_id)?'#bdccb1':'#d7dfcf',weight:1,fillColor:selectedBuildings.has(p.osm_id)?'#dbe5cf':'#e4e9dd',fillOpacity:1};
+      const main=['primary','secondary','tertiary'].includes(p.highway);
+      return {color:main?'#fffdf5':'#f9fbf4',weight:main?10:p.highway==='pedestrian'?7:3,opacity:1,lineCap:'round'};
+    }}).addTo(map);
+    labelLayer=L.layerGroup().addTo(map);
+    let roadNames=new Set();
+    contextData.features.forEach((f)=>{
+      const p=f.properties,center=centerOf(f);if(!center||!p.name)return;
+      if(p.natural==='water')return;
+      let cls='minor';
+      if(p.building){ if(!selectedBuildings.has(p.osm_id))return;cls='building'; }
+      else if(p.highway){if(roadNames.has(p.name)||!['平海路','延安路','学士路','仁和路','东坡路','吴山路','解放路','青年路'].includes(p.name))return;roadNames.add(p.name);cls='road';}
+      else return;
+      L.marker(center,{interactive:false,keyboard:false,icon:L.divIcon({className:'map-label '+cls,html:esc(p.name.replace('湖滨银泰','').replace('杭州市','')),iconSize:[140,12],iconAnchor:[70,6]})}).addTo(labelLayer);
+    });
+    L.marker([30.2551,120.1557],{interactive:false,keyboard:false,icon:L.divIcon({className:'map-label lake',html:'西 湖',iconSize:[100,30],iconAnchor:[50,15]})}).addTo(labelLayer);
+  }
+  function drawMarkers() {
+    if(!markerLayer)return;markerLayer.clearLayers();
+    const groups={station:[]};
+    Object.values(C.venues).forEach((v)=>{ if(category!=='all'&&v.category!==category&&!state.ids.includes(v.id))return;(groups[v.anchor] ||= []).push(v); });
+    Object.entries(groups).forEach(([anchorId,list])=>{
+      L.circleMarker(at(anchorId),{pane:'anchorDots',radius:4,color:'#fff',weight:2,fillColor:selectedColor,fillOpacity:1,interactive:false}).addTo(markerLayer);
+      let chips=anchorId==='station'?`<button class="venue-chip selected ${focusedPlace==='station'?'focused':''}" data-map-place="station"><i>↗</i><span>龙翔桥C口<small>起点${state.loop?' / 返程点':''}</small></span></button>`:'';
+      chips+=list.map((v)=>{const selected=state.ids.includes(v.id);return `<button class="venue-chip ${selected?'selected':''} ${focusedPlace===v.id?'focused':''}" data-map-place="${v.id}" aria-label="${esc(v.name)}，${selected?'已选，点击查看或移出':'点击查看并加入行程'}"><i>${selected?String(state.ids.indexOf(v.id)+1).padStart(2,'0'):v.icon}</i><span>${esc(v.short)}<small>${esc(v.type)} · ${v.duration}分钟</small></span></button>`;}).join('');
+      const html=`<div class="venue-stack">${chips}</div>`;
+      const marker=L.marker(at(anchorId),{pane:'merchantPins',keyboard:false,interactive:true,icon:L.divIcon({className:'venue-map-icon',html,iconSize:[0,0],iconAnchor:[0,0]})}).addTo(markerLayer);
+      const node=marker.getElement();L.DomEvent.disableClickPropagation(node);L.DomEvent.disableScrollPropagation(node);
+      node.querySelectorAll('[data-map-place]').forEach((button)=>button.addEventListener('click',(event)=>{event.stopPropagation();openPlace(button.dataset.mapPlace);}));
+    });
+  }
+  function drawRoutes() {
+    routeLayer.clearLayers();lineStyles=[];
+    for(const leg of trip.legs){
+      if(!leg.route)continue;
+      const coordinates=leg.route.geometry.coordinates;
+      const latlngs=coordinates.map((p)=>[p[1],p[0]]);
+      L.polyline(latlngs,{pane:'tripLines',color:'#f9fcf4',weight:10,opacity:.95,interactive:false}).addTo(routeLayer);
+      const line=L.polyline(latlngs,{pane:'tripLines',color:selectedColor,weight:4,opacity:.8,lineCap:'round',className:'route-line'}).addTo(routeLayer);
+      const hit=L.polyline(latlngs,{pane:'tripHits',color:selectedColor,weight:21,opacity:0,bubblingMouseEvents:false}).addTo(routeLayer);
+      hit.bindTooltip(`${esc(leg.from.name)} → ${esc(leg.to.name)} · ${Math.round(leg.distance)}米`,{sticky:true,className:'road-tooltip'});
+      hit.on('click',()=>openLeg(leg.id));
+      const element=hit.getElement();element.setAttribute('role','button');element.setAttribute('tabindex','0');element.setAttribute('aria-label',`第${leg.id+1}段步行路线：${leg.from.name}到${leg.to.name}，${Math.round(leg.distance)}米`);element.addEventListener('keydown',(e)=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openLeg(leg.id);}});
+      // Access connectors are deliberately dashed, and excluded from the road animation.
+      [[leg.from.anchor,coordinates[0]],[leg.to.anchor,coordinates[coordinates.length-1]]].forEach(([id,p])=>{
+        if(C.haversine([anchors[id].lng,anchors[id].lat],p)>4)L.polyline([at(id),[p[1],p[0]]],{pane:'tripLines',color:'#97a98c',weight:1.2,opacity:.75,dashArray:'3 5',interactive:false}).addTo(routeLayer);
+      });
+      const middle=coordinates[Math.floor(coordinates.length*.5)];
+      L.circleMarker([middle[1],middle[0]],{pane:'tripLines',radius:2,color:selectedColor,weight:1,fillOpacity:1,interactive:false}).addTo(routeLayer);
+      lineStyles.push({id:leg.id,line,hit});
+    }
+    highlightLeg(selectedLeg);
+  }
+  function highlightLeg(id) {for(const item of lineStyles)item.line.setStyle({color:item.id===id?'#bd704f':selectedColor,weight:item.id===id?6:4,opacity:id===null?.8:item.id===id?1:.28});}
+  function fitGeometry(coords,withPanel=false) {
+    if(!coords.length)return;
+    const bounds=L.latLngBounds(coords.map((p)=>[p[1],p[0]]));
+    map.fitBounds(bounds,{paddingTopLeft:isSmall()?[28,210]:[110,160],paddingBottomRight:isSmall()?[55,withPanel?innerHeight*.57:215]:[withPanel?415:95,160],maxZoom:18,animate:false});
+  }
+  function fitAll(selectedOnly=false) {
+    const anchorIds=new Set(['station']);
+    if(selectedOnly&&state.ids.length)state.ids.forEach((id)=>anchorIds.add(C.venues[id].anchor));
+    else Object.values(C.venues).forEach((v)=>{if(category==='all'||v.category===category||state.ids.includes(v.id))anchorIds.add(v.anchor);});
+    fitGeometry([...anchorIds].map((id)=>[anchors[id].lng,anchors[id].lat]),false);
+  }
+  function stopPreview() {
+    if(frame)cancelAnimationFrame(frame);frame=null;preview=null;
+    if(walker){walker.remove();walker=null;}
+    $('#play-icon').textContent='▶';$('#play-label').textContent='播放走法';$('#preview-status').textContent='沿真实道路坐标加速预览';
+  }
+  function play(legs=trip.legs) {
+    stopPreview();const track=C.makeTrack(legs);if(!track.total)return;
+    const initial=C.positionOnTrack(track,0);
+    walker=L.marker([initial.lat,initial.lng],{pane:'walker',keyboard:false,interactive:false,icon:L.divIcon({className:'walker-icon',html:'↟',iconSize:[27,27],iconAnchor:[13.5,13.5]})}).addTo(map);
+    const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+    preview={track,start:performance.now(),duration:reduced?12000:24000,lastLeg:-1};
+    $('#play-icon').textContent='■';$('#play-label').textContent='停止预览';
+    function tick(now){
+      if(!preview)return;
+      const progress=Math.min(1,(now-preview.start)/preview.duration),position=C.positionOnTrack(track,progress*track.total);
+      walker.setLatLng([position.lat,position.lng]);
+      if(position.legId!==preview.lastLeg){preview.lastLeg=position.legId;const leg=trip.legs.find((l)=>l.id===position.legId);$('#preview-status').textContent=`${leg?.from.name} → ${leg?.to.name}`;highlightLeg(position.legId);}
+      if(progress>=1){$('#play-icon').textContent='▶';$('#play-label').textContent='再走一遍';$('#preview-status').textContent='道路走法预览完成';preview=null;frame=null;highlightLeg(selectedLeg);return;}
+      frame=requestAnimationFrame(tick);
+    }
+    frame=requestAnimationFrame(tick);
+  }
+  async function copy(text,message){try{await navigator.clipboard.writeText(text);toast(message);}catch{$('#copy-fallback').value=text;$('#copy-dialog').showModal();$('#copy-fallback').focus();$('#copy-fallback').select();}}
+  function itineraryText(){return [`湖滨约会地图｜${trip.name}`,`${state.start}出发，预计${C.clock(trip.end)}结束`,`${C.money(trip.cost)}双人预留，道路步行${C.distance(trip.distance)}`, ...trip.visits.flatMap((v,i)=>[`${i}. ${C.clock(v.arrival)} ${v.name}${v.duration?`（${v.duration}分钟）`:''}`,...(trip.dinner&&v.id===state.ids[state.ids.length-1]?[`   ${C.clock(trip.dinner.arrival)} 晚饭预留60分钟（餐厅待选，转场未计）`]:[])]),'路线是步行路网快照，商场内换层、餐厅实际转场与排队另计。',location.href].join('\n');}
+  function toggleBasemap(){
+    if(tileLayer){map.removeLayer(tileLayer);tileLayer=null;contextLayer.addTo(map);labelLayer.addTo(map);$('#base-button').setAttribute('aria-pressed','false');toast('已切回简洁路网');return;}
+    contextLayer.remove();labelLayer.remove();let errors=0;
+    tileLayer=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,minZoom:14,keepBuffer:1,referrerPolicy:'strict-origin-when-cross-origin',attribution:'© OpenStreetMap contributors'}).addTo(map);
+    tileLayer.on('tileerror',()=>{if(++errors===4&&tileLayer){map.removeLayer(tileLayer);tileLayer=null;contextLayer.addTo(map);labelLayer.addTo(map);$('#base-button').setAttribute('aria-pressed','false');toast('标准底图暂不可用，继续显示本地真实路网');}});
+    $('#base-button').setAttribute('aria-pressed','true');toast('已切换标准在线街道底图');
+  }
+  async function init(){
+    try{
+      if(!window.L)throw new Error('地图绘制库未加载');
+      [anchors,routeData,contextData]=await Promise.all([loadJSON('anchors.json'),loadJSON('walking-routes.json'),loadJSON('context.geojson')]);
+      map=L.map('map',{zoomControl:false,attributionControl:false,minZoom:14,maxZoom:19,preferCanvas:false}).setView([30.2555,120.1595],17);
+      map.createPane('context').style.zIndex=250;map.createPane('tripLines').style.zIndex=410;map.createPane('tripHits').style.zIndex=420;map.createPane('anchorDots').style.zIndex=430;map.createPane('merchantPins').style.zIndex=500;map.createPane('walker').style.zIndex=590;
+      contextLayer=L.layerGroup();labelLayer=L.layerGroup();markerLayer=L.layerGroup().addTo(map);routeLayer=L.layerGroup().addTo(map);
+      initContext();L.control.scale({imperial:false,position:'bottomleft',maxWidth:90}).addTo(map);
+      update(false);fitAll(false);
+      map.on('click',()=>{if(currentPanel)closePanel();});
+      map.on('zoomend',()=>{const show=map.getZoom()>=17;if(labelLayer)labelLayer.eachLayer((layer)=>{const node=layer.getElement?.();if(node)node.style.opacity=show?'1':'.65';});});
+      window.addEventListener('resize',()=>map.invalidateSize({pan:false}));
+      bindUI();
+    }catch(error){$('#map-status').textContent='地图暂未载入，请刷新重试';$('#map-status').classList.add('error');console.error(error);}
+  }
+  function bindUI(){
+    document.querySelectorAll('[data-preset]').forEach((button)=>button.addEventListener('click',()=>{state.plan=button.dataset.preset;state.ids=C.presets[state.plan].ids.slice();closePanel();update(false);fitAll(true);if(state.plan==='custom')toast('点击地图上的店铺，加入这次行程');}));
+    document.querySelectorAll('[data-category]').forEach((button)=>button.addEventListener('click',()=>{category=button.dataset.category;document.querySelectorAll('[data-category]').forEach((b)=>{b.classList.toggle('active',b===button);b.setAttribute('aria-pressed',String(b===button));});drawMarkers();fitAll(false);}));
+    $('#close-panel').addEventListener('click',closePanel);$('#journey-button').addEventListener('click',openJourney);$('#settings-button').addEventListener('click',openSettings);$('#help-button').addEventListener('click',openHelp);
+    $('#fit-button').addEventListener('click',()=>{closePanel();fitAll(false);});$('#zoom-in').addEventListener('click',()=>map.zoomIn());$('#zoom-out').addEventListener('click',()=>map.zoomOut());$('#base-button').addEventListener('click',toggleBasemap);
+    $('#play-button').addEventListener('click',()=>{if(preview){stopPreview();highlightLeg(selectedLeg);}else play();});
+    $('#share-button').addEventListener('click',()=>copy(location.href,'方案链接已复制，保留选点与顺序'));
+    $('#dismiss-instruction').addEventListener('click',()=>$('#map-instruction').hidden=true);
+    $('#panel-content').addEventListener('click',(event)=>{
+      const target=event.target.closest('button');if(!target)return;
+      if(target.hasAttribute('data-toggle-place'))togglePlace(target.dataset.togglePlace);
+      else if(target.hasAttribute('data-open-place'))openPlace(target.dataset.openPlace);
+      else if(target.hasAttribute('data-open-leg'))openLeg(target.dataset.openLeg);
+      else if(target.hasAttribute('data-play-leg')){const leg=trip.legs.find((l)=>l.id===Number(target.dataset.playLeg));if(leg)play([leg]);}
+      else if(target.hasAttribute('data-open-settings'))openSettings();
+      else if(target.hasAttribute('data-order')){const i=state.ids.indexOf(target.dataset.id),j=i+(target.dataset.order==='up'?-1:1);if(j>=0&&j<state.ids.length){[state.ids[i],state.ids[j]]=[state.ids[j],state.ids[i]];state.plan='custom';update(false);openJourney();}}
+      else if(target.hasAttribute('data-remove')){state.ids=state.ids.filter((id)=>id!==target.dataset.remove);state.plan='custom';update(false);openJourney();}
+      else if(target.id==='copy-itinerary')copy(itineraryText(),'文字行程已复制');
+      else if(target.id==='clear-places'){state.ids=[];state.plan='custom';closePanel();update(false);fitAll(false);toast('行程已清空，在地图上点选店铺');}
+    });
+    $('#panel-content').addEventListener('change',(event)=>{
+      const target=event.target;
+      if(target.id==='start-time'){if(!/^(1[0-8]):[0-5]\d$|^19:00$/.test(target.value)){target.value=state.start;toast('请选择10:00—19:00之间的时间');return;}state.start=target.value;}
+      else if(target.id==='include-dinner')state.dinner=target.checked;
+      else if(target.id==='include-loop')state.loop=target.checked;
+      else return;update();
+    });
+    window.addEventListener('hashchange',()=>{state=C.parseState(location.hash);closePanel();update(false);fitAll(true);});
+    document.addEventListener('keydown',(event)=>{if(event.key==='Escape'){closePanel();stopPreview();}});
+  }
+  init();
 })();
