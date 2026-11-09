@@ -75,6 +75,23 @@
     ]
   },
   {
+    "id": "rain-date",
+    "name": "湖滨雨天约会地图",
+    "subtitle": "在地图上挑店，把约会串成一条路",
+    "category": "生活工具",
+    "label": "RAINY DAY PLANNER",
+    "path": "hangzhou-rain-date/",
+    "repo": "kirrito-k423.github.io/tree/master/hangzhou-rain-date",
+    "preview": "assets/previews/rain-date.svg",
+    "previewAlt": "湖滨雨天约会地图示意预览，使用实际开放道路与步行路线数据绘制",
+    "description": "围绕杭州湖滨 in77 选点安排雨天约会。沿真实步行路网串联店铺，点击地点或路线查看详情，汇总游玩时长和双人预算，支持预设流程、自选排序与分享。",
+    "tags": [
+      "地图选点",
+      "真实步行路线",
+      "双人预算"
+    ]
+  },
+  {
     "id": "resume",
     "name": "Resume Online",
     "subtitle": "工作、研究与工程实践的一个切面",
